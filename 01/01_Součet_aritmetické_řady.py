@@ -1,13 +1,9 @@
 soucet = 0
 prvni_clen = int(input("Zadejte první člen posloupnosti: "))
 posledni_clen = int(input("Zadejte poslední člen posloupnosti: "))
-i = 1
 
-while i < posledni_clen + 1:
-    soucet = soucet + prvni_clen - 1 + i
-    i+=1
-
-
+for i in range(prvni_clen, posledni_clen+1):
+    soucet = soucet + i
 
 print("Součet řady cyklem: ", soucet)
 

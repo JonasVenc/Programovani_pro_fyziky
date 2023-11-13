@@ -32,13 +32,13 @@ def sieve_of_eratosthenes(nmax):
 
 #nmax=1_000
 # nmax=1_000_000_000
-N=1_000
+N=1_000_000_000
 
-filename='primes.dat'                  # jméno souboru
-f=open(filename,'w')                    # otevření textového souboru pro zápis
+filename='primes.bin'                  # jméno souboru
+f=open(filename,'wb')                    # otevření textového souboru pro zápis
 
-filename2='twins.dat'                  # jméno souboru
-fi=open(filename2,'w')                    # otevření textového souboru pro zápis
+filename2='twins.bin'                  # jméno souboru
+fi=open(filename2,'wb')                    # otevření textového souboru pro zápis
 
 for nmax in range(N):
   prvocisla=sieve_of_eratosthenes(nmax)
@@ -47,7 +47,7 @@ for nmax in range(N):
   #print('Pocet prvocisel mensich nez nebo rovnych '+str(nmax)+':',len(prvocisla))
   prvocisla_len = len(prvocisla)
 
-  print(prvocisla_len,file=f)
+  f.write(prvocisla_len.to_bytes(4, byteorder='big'))
 
   #dvojcata=np.empty(nmax,dtype=int)
   k=0
@@ -65,7 +65,7 @@ for nmax in range(N):
                       #dvojcata[k] = prvocisla[i]
                       k += 1
                       #print(prvocisla[i])
-  print(k,file=fi)
+  fi.write(k.to_bytes(4, byteorder='big'))
 
 f.close()                               # uzavření souboru
 fi.close()                               # uzavření souboru

@@ -1,6 +1,8 @@
 import numpy
 import scipy
 from numba import njit
+import matplotlib.pyplot as plt
+
 
 #konstanty pro prepinani
 class cEquation: EXP = 1; GON = 2; GUN = 3
@@ -16,7 +18,10 @@ M = 929 #kg
 K = 0.5*rho*S*Cd
 KM = K/M
 V0 = 788 #m/s
-alpha = 32*numpy.pi/180 #rad elevace dela 
+alpha0 = 32*numpy.pi/180 #rad elevace dela 
+vzdalenost = 10000 #m
+presnost = 100 #m
+
 #prave strany
 @njit
 def fexp(t, y):
@@ -60,7 +65,6 @@ def RungeKutta4(func, y0, t):
 
 #kresleni
 def savefig(t, y, file):
-    import matplotlib.pyplot as plt
     match Equation:
         case cEquation.EXP:
             fanal = lambda t: numpy.exp(-t) 
@@ -75,46 +79,89 @@ def savefig(t, y, file):
     plt.show()
 
 #vyber ulohy
-Equation = cEquation.GUN
-Solver = cSolver.SCI
 
-match Equation:
-    case cEquation.EXP:
-        func = fexp
-        tmin = 0
-        tmax = 2
-        y0 = numpy.array([1])
-        nmax = 20 if Solver == cSolver.EUL else 5
-    case cEquation.GON:
-        func = fgon
-        tmin = 0
-        tmax = 2*numpy.pi
-        y0 = numpy.array([0,1])
-        nmax = 100 if Solver == cSolver.EUL else 25
-    case cEquation.GUN:
-        func = fgun
-        tmin = 0
-        tmax = 75
-        y0 = numpy.array([0,0,V0*numpy.cos(alpha),V0*numpy.sin(alpha)])
-        nmax = 1000 if Solver == cSolver.EUL else 250
+beta = 0
+gama = alpha0
+odch = (gama-beta)/8
+alpha = beta
+#print (alpha0*180/numpy.pi, odch*180/numpy.pi)
+zasah = 0
+alpha1 = 0
+poc = 0
 
-#vytvoreni casove osy
-t = numpy.linspace(tmin, tmax, nmax+1)
+while (zasah == 0):
 
-#reseni
-match Solver:
-    case cSolver.EUL:
-        y = Euler(func, y0, t)
-    case cSolver.RK4:
-        y = RungeKutta4(func, y0, t)
-    case cSolver.SCI:
-        y = scipy.integrate.odeint(func, y0, t, tfirst=True)
+    pred = 0
+    poc += 1
 
-n = 1
-while (y[n,1] >= 0):
-    n += 1
+    for i in range(0,9,1):
 
-n -= 1
-print(y[n,0], y[n,1], t[n]) #vzdalenost, vyska, cas
+        Equation = cEquation.GUN
+        Solver = cSolver.SCI
 
-savefig(t, y, "odr.png") #ukládá do vyššího adresáře
+        match Equation:
+            case cEquation.EXP:
+                func = fexp
+                tmin = 0
+                tmax = 2
+                y0 = numpy.array([1])
+                nmax = 20 if Solver == cSolver.EUL else 5
+            case cEquation.GON:
+                func = fgon
+                tmin = 0
+                tmax = 2*numpy.pi
+                y0 = numpy.array([0,1])
+                nmax = 100 if Solver == cSolver.EUL else 25
+            case cEquation.GUN:
+                func = fgun
+                tmin = 0
+                tmax = 75
+                y0 = numpy.array([0,0,V0*numpy.cos(alpha),V0*numpy.sin(alpha)])
+                nmax = 1000 if Solver == cSolver.EUL else 250
+
+        #vytvoreni casove osy
+        t = numpy.linspace(tmin, tmax, nmax+1)
+
+        #reseni
+        match Solver:
+            case cSolver.EUL:
+                y = Euler(func, y0, t)
+            case cSolver.RK4:
+                y = RungeKutta4(func, y0, t)
+            case cSolver.SCI:
+                y = scipy.integrate.odeint(func, y0, t, tfirst=True)
+
+        n = 1
+        while (y[n,1] >= 0):
+            n += 1
+
+        n -= 1
+
+        #print(y[n,0]) #, y[n,1], t[n]) #vzdalenost, vyska, cas
+
+        #print(alpha*180/numpy.pi) #uhel vystrelu
+
+        if (y[n,0] >= vzdalenost - presnost and y[n,0] <= vzdalenost + presnost):
+            print("-------------------------")
+            print("Zasah nastal v: ", y[n,0], "m.")
+            print("Uhel zasahu: ", alpha*180/numpy.pi, "°\n")
+            zasah = y[n,0]
+            break
+
+        if (y[n,0] < vzdalenost - presnost):
+            pred += 1
+            #print("Pred: ", y[n,0], "m.", pred)
+
+        alpha += odch
+
+    print("Po ", poc,". vystrelech pocet gejziru pred lodi: ", pred, ".\n")
+    alpha = (pred - 1) * odch + beta + alpha1
+    alpha1 = alpha
+    odch = odch/8
+
+plt.plot(y[:n, 0], y[:n, 1])
+plt.xlabel('Distance')
+plt.ylabel('Height')
+plt.title('Projectile motion that hits the target')
+plt.grid(True)
+plt.show()
